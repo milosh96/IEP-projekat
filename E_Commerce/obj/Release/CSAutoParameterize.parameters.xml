@@ -1,0 +1,12 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<parameters>
+  <parameter name="AuctionsDB-Web.config Connection String" description="AuctionsDB Connection String used in web.config by the application to access the database." defaultValue="data source=DULE-PC;initial catalog=e_commerce;integrated security=True;MultipleActiveResultSets=True;App=EntityFramework" tags="SqlConnectionString">
+    <parameterEntry kind="XmlFile" scope="C:\\Users\\MIlos\\source\\repos\\IEP\\E_Commerce\\obj\\Release\\Package\\PackageTmp\\Web\.config$" match="/configuration/connectionStrings/add[@name='AuctionsDB']/@connectionString" />
+  </parameter>
+  <parameter name="AuctionsDB2-Web.config Connection String" description="AuctionsDB2 Connection String used in web.config by the application to access the database." defaultValue="data source=localhost;initial catalog=e_commerce;integrated security=True;MultipleActiveResultSets=True;App=EntityFramework" tags="SqlConnectionString">
+    <parameterEntry kind="XmlFile" scope="C:\\Users\\MIlos\\source\\repos\\IEP\\E_Commerce\\obj\\Release\\Package\\PackageTmp\\Web\.config$" match="/configuration/connectionStrings/add[@name='AuctionsDB2']/@connectionString" />
+  </parameter>
+  <parameter name="AuctionsDB1-Web.config Connection String" description="AuctionsDB1 Connection String used in web.config by the application to access the database." defaultValue="data source=DULE-PC;initial catalog=e_commerce;integrated security=True;multipleactiveresultsets=True;application name=EntityFramework" tags="SqlConnectionString">
+    <parameterEntry kind="XmlFile" scope="C:\\Users\\MIlos\\source\\repos\\IEP\\E_Commerce\\obj\\Release\\Package\\PackageTmp\\Web\.config$" match="/configuration/connectionStrings/add[@name='AuctionsDB1']/@connectionString" />
+  </parameter>
+</parameters>

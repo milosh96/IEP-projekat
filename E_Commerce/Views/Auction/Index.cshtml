@@ -1,0 +1,268 @@
+﻿@model PagedList.IPagedList<E_Commerce.Models.auction>
+@using PagedList.Mvc;
+@{
+    ViewBag.Title = "Auction List";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+
+<h2>@ViewBag.Title</h2>
+<!-- Products section -->
+<section id="aa-product">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="row">
+                    <div class="aa-product-area">
+                        <div class="aa-product-inner">
+                            <!-- start page numbering -->
+                            <div class="page-numbering">
+                                <!--@Html.PagedListPager(Model, page => Url.Action("Index", new { page, currentFilter = ViewBag.CurrentFilter }))
+                            -->
+                                @Html.PagedListPager(Model, page => Url.Action("IndexGet",
+                                                new { page }))
+                            </div>
+                            <!-- Tab panes -->
+                            <div class="tab-content">
+                                <!-- Start all products -->
+                                <div class="tab-pane fade in active" id="men">
+                                    <ul class="aa-product-catg">
+                                        @foreach (var item in Model)
+                                        {
+                                            string lastBid = item.id + "_lastBid";
+                                            string productPic = item.id + "_img";
+                                            string currentPriceID = item.id + "_lastPrice";
+
+                                            string statusID = item.id + "_status";
+                                            string timeID = item.id + "_time";
+                                            string bidBtnID = item.id + "_btn";
+
+                                            string badgeClass;
+
+                                            switch (item.status)
+                                            {
+                                                case ("OPENED"):
+                                                    badgeClass = "aa-badge aa-sale";
+                                                    break;
+                                                case ("READY"):
+                                                    badgeClass = "aa-badge aa-hot";
+                                                    break;
+                                                <!--COMPLETE-->
+                                                default:
+                                                    badgeClass = "aa-badge aa-sold-out";
+                                                    break;
+                                            }
+                                            string preostaloVreme = "";
+                                            int duration = 0;
+                                            if (item.openedAt != null)
+                                            {
+                                                DateTime closing = (DateTime)item.closedAt;
+                                                DateTime now = DateTime.Now;
+                                                duration = (int)Math.Floor((closing - now).TotalSeconds);
+                                                <!--U slucaju da je <=0 treba promeniti status-->
+                                                if (duration<0)
+                                                {
+                                                    duration = 0;                                                   
+                                                }
+
+                                            }
+                                            else
+                                            {
+                                                duration = (int)item.duration;
+                                            }
+                                            int minutes = (int)(duration / 60);
+                                            int seconds = (int)(duration % 60);
+                                            preostaloVreme = minutes + ":" + seconds;
+                                            <!-- start single product item -->
+                                            <li class="col-md-4 col-xs-12" style="border:10px">
+                                                <figure>
+                               
+                                                        @{
+                                                            var baseIm = Convert.ToBase64String(item.picture);
+                                                            var imageSrc = String.Format("data:image/jpg;base64,{0}", baseIm);
+                                                        }
+                                                        <img src="@imageSrc" style="width:200px; height:120px" alt="slika_proizvoda" class="product-image" id="@productPic" />
+                                                   
+                                                    @{
+                                                        string styleBidBtn;
+
+                                                        if (item.status.Contains("OPENED"))
+                                                        {
+                                                            styleBidBtn = "display: inline;";
+                                                        }
+                                                        else
+                                                        {
+                                                            styleBidBtn = "display: none;";
+                                                        }
+                                                    }
+
+                                                </figure>
+                                                <figcaption>
+                                                    <h4 class="aa-product-title">
+                                                        @using (Html.BeginForm("Show", "Auction", FormMethod.Post, new { enctype = "multipart/form-data", @class = "form-horizontal aa-login-form" }))
+                                                        {
+
+                                                            <input type="hidden" name="idAukcije" value="@item.id" />
+
+                                                            <input type="submit"  class="btn-link" style="text-decoration : none" value="@Html.DisplayFor(modelItem => item.title)" />
+
+                                                        }
+                                                       
+                                                    </h4>
+                                                    <span class="aa-product-price" id="@currentPriceID">@Html.DisplayFor(modelItem => item.currentPrice)</span><br />
+                                                    <span class="myTimer" id="@item.id" data-value="@preostaloVreme">@preostaloVreme</span>
+
+                                                    <div class="aa-product-hvr-content">
+                                                        @{
+                                                            var lastUserName = "No bids.";
+                                                        }
+                                                        @if (item.bidId != Guid.Empty)
+                                                        {
+                                                            E_Commerce.Models.bid bid = null;
+                                                            E_Commerce.Models.User lastUser = null;
+                                                            using (var context = new E_Commerce.Models.AuctionsDB())
+                                                            {
+                                                                bid = context.bid.Find(item.bidId);
+                                                                if (bid != null)
+                                                                {
+                                                                    lastUser = context.User.Find(bid.idUser);
+                                                                }
+                                                            }
+                                                            if (lastUser != null)
+                                                            {
+                                                                lastUserName = lastUser.FirstName + " " + lastUser.LastName;
+                                                            }
+
+                                                        }
+                                                        <span id="@lastBid">@lastUserName</span>
+                                                    </div>
+                                                    <!-- product badge -->
+                                                    <span class="@badgeClass statusi" id="@statusID">@Html.DisplayFor(modelItem => item.status)</span>
+                                                    @{ 
+                                                        var ready = 0;
+                                                    }
+                                                    @if (item.status.Contains("OPENED"))
+                                                    {
+                                                        ready = 1;
+                                                    }
+                                                     <!--<span class="statusi" style="visibility:hidden;">@ready</span>-->
+                                                    @{
+                                                        var btnType = "btn btn-default";
+                                                    }
+                                                    @if (!(Request.IsAuthenticated && item.status.Contains("OPENED")))
+                                                    {
+                                                        btnType += " disabled";
+                                                    }
+                                                    @using (Html.BeginForm("Show", "Auction", FormMethod.Post, new { enctype = "multipart/form-data", @class = "form-horizontal aa-login-form" }))
+                                                    {
+
+                                                        <input type="hidden" name="idAukcije" value="@item.id" />
+
+                                                        <input type="submit" id="@bidBtnID" class="@btnType bidBtn" value="BID" />
+
+                                                    }
+                                                </figcaption>
+                                            </li>
+                                        }
+                                    </ul>
+                                </div>
+                                <!-- / all products -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<!-- / Products section -->
+
+@section scripts{
+    <!--Script references. -->
+    <!--The jQuery library is required and is referenced by default in _Layout.cshtml. -->
+    <!--Reference the SignalR library. -->
+    <script src="~/Scripts/jquery.signalR-2.3.0.min.js"></script>
+    <!--Reference the autogenerated SignalR hub script. -->
+    <script src="~/signalr/hubs"></script>
+    <!--SignalR script to update the chat page and send messages.-->
+<script>
+    $(function () {
+        // Reference the auto-generated proxy for the hub.
+        var myHub = $.connection.auctionsHub;
+        // Create a function that the hub can call back to display messages.
+
+        //promena poslednjeg bida
+        myHub.client.updateLastBidAuction = function (auctionID, fullName, newPrice) {
+            var lastName = document.getElementById(auctionID + "_lastBid");
+            var lastPrice = document.getElementById(auctionID + "_lastPrice");
+            lastName.innerHTML = fullName;
+            lastPrice.innerHTML = newPrice;
+        }
+
+        //aukcija otvorena
+        myHub.client.updateStatus = function (auctionID) {           
+            var statusField = "#" + auctionID + "_status";
+            var btn = "#" + auctionID + "_btn";
+            $(statusField).text("OPENED    ");
+            $(btn).removeClass("disabled");
+        }
+
+        myHub.client.closeAuction = function (auctionID) {
+            var statusField = "#" + auctionID + "_status";
+            var btn = "#" + auctionID + "_btn";
+            $(statusField).text("COMPLETED");
+            $(btn).addClass("disabled");
+        }
+
+        $.connection.hub.start();
+    });
+
+        window.onload = function () {
+
+
+
+            function tick() {
+                var timers = document.getElementsByClassName("myTimer");
+                var buttons = document.getElementsByClassName("bidBtn");
+                var statusi = document.getElementsByClassName('statusi');
+                for (var i = 0; i < timers.length; i++) {
+                    if (statusi[i].innerHTML == "OPENED    ") {  
+                        var array = timers[i].innerHTML.split(":");
+                        var minutes = array[0];
+                        var seconds = array[1];
+                        minutes = parseInt(minutes);
+                        seconds = parseInt(seconds);
+                        if (minutes == 0 && (seconds == 1 || seconds == 0)) {
+                            var auctionId = timers[i].getAttribute("id");
+                            $.ajax({
+                                type: "POST",
+                                url: "Auction/FinishAuction",
+                                data: "{'id' :'" + auctionId + "'}",
+                                dataType: "json",
+                                contentType: "application/json; charset=utf-8",
+                                success: function () {
+                                   // alert("Prosao");
+                                }
+                            });
+
+                            // buttons[i].innerHTML = '@Html.ActionLink("BID NOW", "BidNow", "Auctions", null, htmlAttributes: new { @class = "btn btn-secondary", @onclick = "javascript:return false;" })';
+                            var btn = "#" + auctionId + "_btn";
+                            $(btn).prop('disabled', true);
+                            timers[i].innerHTML = "0:0";
+                            statusi[i].innerHTML="COMPLETED";
+                            //badges[i].innerHTML = '<span style="width:100%" class="badge badge-pill badge-danger">COMPLETED</span>'
+                        } else {
+                            var time = minutes * 60 + seconds - 1;
+                            minutes = parseInt(time / 60);
+                            seconds = time % 60;
+                            timers[i].innerHTML = minutes + ":" + seconds;
+                        }
+                    }
+                }
+                window.setTimeout(tick, 1000);
+            }
+
+            window.setTimeout(tick, 1000);
+        };
+    </script>
+}

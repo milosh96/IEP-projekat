@@ -1,0 +1,294 @@
+﻿@model E_Commerce.Models.AuctionAndBidsModel
+@{
+    ViewBag.Title = "Detalji o aukciji";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    string lastUserId = Model.auction.id + "_lastBid";
+    string openedAt = Model.auction.id + "_open";
+    string currentPriceID = Model.auction.id + "_lastPrice";
+    string startPriceID = Model.auction.id + "_startPrice";
+    string statusID = Model.auction.id + "_status";
+    string tableID = Model.auction.id + "_table";
+    string timeID = Model.auction.id + "_time";
+    string bidBtnID = Model.auction.id + "_btn";
+    string adminWrapper = "admin-wrapper-" + Model.auction.id;
+    string userWrapper = "user-wrapper-" + Model.auction.id;
+    var topBids = Model.bids;
+    E_Commerce.Models.bid lastBid = null;
+    E_Commerce.Models.User lastUser = null;
+    using (var context = new E_Commerce.Models.AuctionsDB())
+    {
+        lastBid = context.bid.Find(Model.auction.bidId);
+        if (lastBid != null)
+        {
+            lastUser = context.User.Find(lastBid.idUser);
+        }
+
+    }
+
+    string preostaloVreme = "";
+    int duration = 0;
+    if (Model.auction.openedAt != null)
+    {
+        DateTime closing = (DateTime)Model.auction.closedAt;
+        DateTime now = DateTime.Now;
+        duration = (int)Math.Floor((closing - now).TotalSeconds);
+        <!--U slucaju da je <=0 treba promeniti status-->
+        if (duration < 0)
+        {
+            duration = 0;
+        }
+
+    }
+    else
+    {
+        duration = (int)Model.auction.duration;
+    }
+    int minutes = (int)(duration / 60);
+    int seconds = (int)(duration % 60);
+    preostaloVreme = minutes + ":" + seconds;
+}
+
+<h2>Auction details</h2>
+<!-- product category -->
+<section id="aa-product-details">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="aa-product-details-area">
+                    <div class="aa-product-details-content">
+                        <div class="row">
+                            <!-- Modal view slider -->
+                            <div class="col-md-5 col-sm-5 col-xs-12">
+                                <div class="aa-product-view-slider">
+                                    <div id="demo-1" class="simpleLens-gallery-container">
+                                        <div class="simpleLens-container">
+                                            <div class="simpleLens-big-image-container">
+                                                @{
+                                                    var baseIm = Convert.ToBase64String(Model.auction.picture);
+                                                    var imageSrc = String.Format("data:image/jpg;base64,{0}", baseIm);
+                                                }
+                                                <a data-lens-image="@imageSrc" class="simpleLens-lens-image">
+                                                    <img src="@imageSrc" style="width:350px; height:200px;" alt="slika_proizvoda" class="product-image" />
+                                                </a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Modal view content -->
+                            <div class="col-md-7 col-sm-7 col-xs-12">
+                                <div class="aa-product-view-content">
+                                    <h3>@Model.auction.title</h3>
+                                    <div class="aa-price-block">
+                                        <p class="aa-product-avilability">Current price: &euro; <span id="@currentPriceID">@Model.auction.currentPrice</span></p>
+                                        <p class="aa-product-avilability">Status: <span id="@statusID" >@Model.auction.status</span></p>
+                                        <p class="aa-product-avilability">Auction created at: <span>@Model.auction.createdAt</span></p>
+                                        <p class="aa-product-avilability">Auction opened at: <span id="@openedAt" >@Model.auction.openedAt</span></p>
+                                    </div>
+                                    @{
+                                        var ready = 0;
+                                    }
+                                    @if (Model.auction.status.Contains("OPENED"))
+                                    {
+                                        ready = 1;
+                                    }
+                                    <span id="statusi" style="visibility:hidden;">@ready</span>
+                                    @{
+                                        var btnType = "btn btn-default";
+                                    }
+                                    @if (!(Request.IsAuthenticated && Model.auction.status.Contains("OPENED")))
+                                    {
+                                        btnType += " disabled";
+                                    }
+                                    <h4>Time remaining:</h4>
+                                    <div class="aa-prod-view-size"><span class="time-remaining" id="@timeID">@preostaloVreme</span></div>
+                                    @{
+                                        var nameLast = "No bids.";
+                                    }
+                                    @if (lastUser != null)
+                                    {
+                                        nameLast = @lastUser.FirstName + @lastUser.LastName;
+                                    }
+                                    <h4>Last bid:</h4>
+                                    <span id="@lastUserId">@nameLast</span>
+
+                                    <div class="aa-prod-view-bottom">
+                                        @if (Request.IsAuthenticated)
+                                        {
+                                            using (Html.BeginForm("Bid", "Auction", FormMethod.Post, new { enctype = "multipart/form-data", @class = "form-horizontal aa-login-form" }))
+                                            {
+
+                                                <input type="hidden" name="idAukcije" value="@Model.auction.id" />
+                                                <input type="submit" id="@bidBtnID" class="@btnType" value="BID" />
+
+                                            }
+                                        }
+                                    </div>
+                                    <span class="aukcijaIdHidden" id="@Model.auction.id"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bid list -->
+                    <div class="aa-product-related-item">
+                        <div class="row">
+                            <div class="col-ms-12">
+                                <h3>Previous bids</h3>
+                                <div class="checkout-right">
+                                    <div class="aa-order-summary-area">
+                                        <table class="table table-responsive" id="@tableID">
+                                            <thead>
+                                                <tr>
+                                                    <th>User</th>
+                                                    <th>Bid</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var bid in Model.bids)
+                                                {
+                                                    E_Commerce.Models.User currUser = null;
+                                                    using (var con = new E_Commerce.Models.AuctionsDB())
+                                                    {
+                                                        currUser = con.User.Find(bid.idUser);
+                                                    }
+                                                    <tr>
+                                                        @if (currUser != null)
+                                                        {
+                                                            <td><strong> @currUser.FirstName @currUser.LastName</strong></td>
+                                                        }
+                                                        else
+                                                        {
+                                                            <td><strong> User deleted.</strong></td>
+                                                        }
+                                                        <td>&#x26C3; @bid.numTokens</td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<!-- / product category -->
+
+@section scripts{
+    <!--Script references. -->
+    <!--The jQuery library is required and is referenced by default in _Layout.cshtml. -->
+    <!--Reference the SignalR library. -->
+    <script src="~/Scripts/jquery.signalR-2.3.0.min.js"></script>
+    <!--Reference the autogenerated SignalR hub script. -->
+    <script src="~/signalr/hubs"></script>
+    <!--SignalR script to update the chat page and send messages.-->
+    <script>
+        var spanId = document.getElementsByClassName("aukcijaIdHidden")
+         var idHidden=spanId[0].getAttribute("id");
+    $(function () {
+        // Reference the auto-generated proxy for the hub.
+        var myHub = $.connection.auctionsHub;
+       
+        // Create a function that the hub can call back to display messages.
+        //promena poslednjeg bida
+        myHub.client.updateLastBidAuction = function (auctionID, fullName, newPrice) {
+           
+            var idAuk =idHidden;
+            if (auctionID == idAuk) {
+                var lastName = document.getElementById(auctionID + "_lastBid");
+                var lastPrice = document.getElementById(auctionID + "_lastPrice");
+                var tableID = auctionID + '_table';
+                var table = document.getElementById(tableID);   
+                lastName.innerHTML = ''+fullName;
+                lastPrice.innerHTML = ''+newPrice;
+
+                //dodaj u tabelu
+                // Create an empty <tr> element and add it to the 1st position of the table:
+                var row = table.insertRow(1);
+
+                // Insert new cells (<td> elements) at the 1st and 2nd position of the "new" <tr> element:
+                var cell1 = row.insertCell(0);
+                var cell2 = row.insertCell(1);
+
+                // Add some text to the new cells:
+                cell1.innerHTML = '<strong> ' + fullName + '</strong>';
+                cell2.innerHTML = '&#x26C3; ' + newPrice;
+
+                var numRows = table.rows.length;
+
+                if (numRows == 12) {
+                    table.deleteRow(11);
+                }
+            }
+            
+        }
+
+        //aukcija otvorena
+        myHub.client.updateStatus = function (auctionID) {
+            var statusField = "#" + auctionID + "_status";
+            var openDate = "#" + auctionID + "_open";
+            var btn = "#" + auctionID + "_btn";
+            $(statusField).text("OPENED    ");
+            $(openDate).text(new Date().toLocaleString());
+            $(btn).removeClass("disabled");
+        }
+
+
+        myHub.client.closeAuction = function (auctionID) {
+            var statusField = "#" + auctionID + "_status";
+            var btn = "#" + auctionID + "_btn";
+            $(statusField).text("COMPLETED");
+            $(btn).addClass("disabled");
+        }
+        $.connection.hub.start();
+    });
+
+        window.onload = function () {
+
+            function tick() {
+                var timer = document.getElementById(idHidden+'_time');
+                var button = document.getElementById(idHidden + '_btn');
+                var statusi = document.getElementById(idHidden+'_status');
+                if (statusi.innerHTML == "OPENED    ") {
+                        var array = timer.innerHTML.split(":");
+                        var minutes = array[0];
+                        var seconds = array[1];
+                        minutes = parseInt(minutes);
+                        seconds = parseInt(seconds);
+                    if (minutes == 0 && (seconds == 1 || seconds == 0)) {
+                        var auctionId = idHidden;
+                            $.ajax({
+                                type: "POST",
+                                url: "Auction/FinishAuction",
+                                data: "{'id' :'" + auctionId + "'}",
+                                dataType: "json",
+                                contentType: "application/json; charset=utf-8",
+                                success: function () {
+                                   // alert("Prosao");
+                                }
+                            });
+
+                            // buttons[i].innerHTML = '@Html.ActionLink("BID NOW", "BidNow", "Auctions", null, htmlAttributes: new { @class = "btn btn-secondary", @onclick = "javascript:return false;" })';
+                            var btn = "#" + auctionId + "_btn";
+                            $(btn).prop('disabled', true);
+                            timer.innerHTML = "0:0";
+
+                        } else {
+                            var time = minutes * 60 + seconds - 1;
+                            minutes = parseInt(time / 60);
+                            seconds = time % 60;
+                            timer.innerHTML = minutes + ":" + seconds;
+                        }
+                    }
+                window.setTimeout(tick, 1000);
+            }
+
+            window.setTimeout(tick, 1000);
+        };
+    </script>
+}

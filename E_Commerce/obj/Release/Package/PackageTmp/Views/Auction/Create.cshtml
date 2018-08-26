@@ -1,0 +1,70 @@
+﻿@model E_Commerce.Models.auctionNEW
+@{ 
+    ViewBag.Title = "New Auction";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<!-- Cart view section -->
+<section id="aa-myaccount">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="aa-myaccount-area">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="aa-myaccount-register">
+                                <h4>Add new auctionu</h4>
+                                @using (Html.BeginForm("ConfirmCreate", "Auction", FormMethod.Post, new { enctype = "multipart/form-data", @class = "form-horizontal aa-login-form" }))
+                                {
+                                    @Html.AntiForgeryToken()
+                                    <div class="form-group">
+                                        @Html.LabelFor(m => m.title, "Title of auction: ", new { @class = "col-md-2 control-label" })
+                                        <div class="col-md-8">
+                                            @Html.TextBoxFor(m => m.title, new { @class = "form-control" })
+                                        </div>
+                                        <div class="col-md-2">
+                                            @Html.ValidationMessageFor(m => m.title)
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        @Html.LabelFor(m => m.duration, "Duration in seconds: ", new { @class = "col-md-2 control-label" })
+                                        <div class="col-md-8">
+                                            @Html.TextBoxFor(m => m.duration, new { @class = "form-control" })
+                                        </div>
+                                        <div class="col-md-2">
+                                            @Html.ValidationMessageFor(m => m.duration)
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        @Html.LabelFor(m => m.startPrice, "Starting price: ", new { @class = "col-md-2 control-label" })
+                                        <div class="col-md-8">
+                                            @Html.TextBoxFor(m => m.startPrice, new { @class = "form-control" })
+                                        </div>
+                                        <div class="col-md-2">
+                                            @Html.ValidationMessageFor(m => m.startPrice)
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        @Html.LabelFor(m => m.picture, "Picture of product: ", new { @class = "col-md-2 control-label" })
+                                        <div class="col-md-8">
+                                            @Html.TextBoxFor(model => model.picture, new { type = "file" })
+                                        </div>
+                                        <div class="col-md-2">
+                                            @Html.ValidationMessageFor(m => m.picture)
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <div class="col-md-offset-2 col-md-10">
+                                            <input type="submit" class="btn btn-default" value="Create new auction" />
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<!-- / Cart view section -->

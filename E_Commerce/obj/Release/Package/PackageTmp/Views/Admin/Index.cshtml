@@ -1,0 +1,76 @@
+﻿
+@{
+    ViewBag.Title = "Index";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>Current paramaters</h2>
+
+<p class="text-info">@ViewBag.StatusMessage</p>
+<section id="aa-product">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="row">
+                    <div class="aa-product-area">
+                        <div class="aa-product-inner">
+                            <!-- Tab panes -->
+                            <div class="tab-content">
+                                <!-- Start all products -->
+                                <div class="tab-pane fade in active" id="men">
+
+                                    <table class="table table-responsive">
+                                        <thead>
+                                            <tr>
+                                                <th>Pramater</th>
+                                                <th>Value</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td>Auctions per page(N):</td>
+                                                <td>@E_Commerce.Models.AdminParams.N</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Default duration of auction(D):</td>
+                                                <td>@E_Commerce.Models.AdminParams.D</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Number of tokens-SILVER package(S):</td>
+                                                <td>@E_Commerce.Models.AdminParams.S</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Number of tokens-GOLD package(G):</td>
+                                                <td>@E_Commerce.Models.AdminParams.G</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Number of tokens-PLATINUM package(P):</td>
+                                                <td>@E_Commerce.Models.AdminParams.P</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Currency(C):</td>
+                                                <td>@E_Commerce.Models.AdminParams.C</td>
+                                            </tr>
+                                            <tr>
+                                                <td>Value of ONE token in default currency(T):</td>
+                                                <td>@E_Commerce.Models.AdminParams.T</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+
+                                </div>
+                                <!-- / all products -->
+                                <div class="row">
+                                    <button type="button" class="btn btn-success">
+                                        @Html.ActionLink("Change values", "ChangeParams", "Admin")
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+

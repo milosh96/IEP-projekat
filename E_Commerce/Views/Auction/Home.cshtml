@@ -1,0 +1,72 @@
+﻿
+@{
+    ViewBag.Title = "Auctions";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+
+<!---->
+<h6>@ViewBag.StatusMessage</h6>
+<div class="container">
+    <div class="row">
+        <div class="col-md-12">
+            <div class="aa-myaccount-area">
+                <div class="row">
+                    <h2>Search auctions</h2>
+                    <div class="col-md-12">
+                        <div class="aa-myaccount-register">
+                            @using (Html.BeginForm("Index", "Auction", FormMethod.Post, new { enctype = "multipart/form-data", @class = "form-horizontal aa-login-form" }))
+                            {
+                                <p>
+                                    Title of the auctions: <br />
+                                    <input type="text" name="title" />
+                                    <br />Lowest price: <br />
+                                    <input type="text" name="priceLow" />
+                                    <br />Highest price: <br />
+                                    <input type="text" name="priceHigh" />
+                                    <br />Status of the auctions: <br />
+                                    <input type="text" name="status" />
+
+                                </p>
+
+                                <div class="form-group">
+                                    <div class="col-md-offset-2 col-md-10">
+                                        <input type="submit" class="btn btn-default" value="Search" />
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+                @if (Request.IsAuthenticated)
+                {
+                    <div class="row">
+                        <h2>Create new auction</h2>
+                        <button type="button" class="btn btn-default">@Html.ActionLink("Create new auction", "Create", "Auction")</button>
+                    </div>
+                }
+
+                <!--mozda izbaciti i dodati kod search-a-->
+                @if (Request.IsAuthenticated && User.IsInRole("admin"))
+                {
+                    <div class="row">
+                        <h2>Open auction that is pending</h2>
+                        <button type="button" class="btn btn-default">@Html.ActionLink("Open auction", "OpenAdmin", "Auction")</button>
+                    </div>
+                }
+
+                @if (Request.IsAuthenticated)
+                {
+                    <div class="row">
+                        <h2>Auctions I have won</h2>
+                        <button type="button" class="btn btn-default">@Html.ActionLink("Show", "Won", "Auction")</button>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!--End of search section-->
+<!--Button add new auction-->

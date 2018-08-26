@@ -1,0 +1,60 @@
+﻿@model PagedList.IPagedList<E_Commerce.Models.tokenOrder>
+@using PagedList.Mvc;
+@{
+    ViewBag.Title = "ListOrders";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>Orders list</h2>
+
+<!-- Products section -->
+<section id="aa-product">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="row">
+                    <div class="aa-product-area">
+                        <div class="aa-product-inner">
+                            <div class="page-numbering">
+                                @Html.PagedListPager(Model, page => Url.Action("ListOrders", new { page }))
+                            </div>
+                            <!-- Tab panes -->
+                            <div class="tab-content">
+                                <!-- Start all products -->
+                                <div class="tab-pane fade in active" id="men">
+                                    <table class="table table-responsive">
+                                        <thead>
+                                            <tr>
+                                                <th>Price of the package</th>
+                                                <th>Number of tokens</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            
+                                                @foreach (var item in Model)
+                                                {
+                                                    <tr>
+                                                        <td>&euro; @item.price</td>
+                                                        <td>@item.numTokens</td>
+                                                        <td>@item.status</td>
+                                                    </tr>
+                                                }
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <!-- / all products -->
+                                <div class="row">
+                                    <button type="button" class="btn btn-success">
+                                        @Html.ActionLink("Place new order", "Buy", "Token")
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<!-- / Products section -->

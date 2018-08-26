@@ -1,0 +1,29 @@
+﻿@{
+    ViewBag.Title = "Home Page";
+}
+
+<div class="jumbotron">
+    <h1>Welcome to Nile commerce!</h1>
+    <p class="lead">The biggest e-commerce platform in the world.</p>
+
+    @if (User.Identity.IsAuthenticated)
+    {
+        <p><button type="button" class="btn btn-default btn-lg">@Html.ActionLink("Shop now", "Home", "Auction") &raquo;</button></p>
+
+    }
+    else
+    {
+        <p><button type="button" class="btn btn-default btn-lg">@Html.ActionLink("Sign-in for best experience", "Login", "Account") &raquo;</button></p>
+    }
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <h2>Comparison</h2>
+        <p>
+            Amazon : 6400km <br/>
+            Nile : 6650km
+        </p>
+        <p><a class="btn btn-default" href="https://en.wikipedia.org/wiki/List_of_rivers_by_length">Learn more &raquo;</a></p>
+    </div>
+</div>

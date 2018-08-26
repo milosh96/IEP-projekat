@@ -1,0 +1,20 @@
+﻿@model E_Commerce.Models.tokenOrder
+@{
+    ViewBag.Title = "ConfirmBuy";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    string userId = "&clientId="+Model.id;
+}
+
+<h2>Confirm purchase</h2>
+
+<section>
+    <div class="container">
+        <div class="row">
+            <a id="c-mobile-payment-widget"
+               href="https://stage.centili.com/payment/widget?apikey=e8c698ba26ac2869275846830789ce1c&country=rs&reference=@Model.id">
+                <img src="https://www.centili.com/images/centili-widget-button.png" />
+            </a>
+        </div>
+    </div>
+
+</section>

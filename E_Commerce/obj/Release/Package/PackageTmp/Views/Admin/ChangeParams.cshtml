@@ -1,0 +1,85 @@
+﻿@model E_Commerce.Models.AdminParams
+@{
+    ViewBag.Title = "Index";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>Change paramaters</h2>
+
+<section id="aa-product">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="row">
+                    <div class="aa-product-area">
+                        <div class="aa-product-inner">
+                            <!-- Tab panes -->
+                            <div class="tab-content">
+                                <!-- Start all products -->
+                                <div class="tab-pane fade in active" id="men">
+
+                                    @using (Html.BeginForm("SaveChanges", "Admin", FormMethod.Post, new { enctype = "multipart/form-data", @class = "form-horizontal aa-login-form" }))
+                                    {
+                                        @Html.AntiForgeryToken()
+                                        <div class="form-group">
+                                            @Html.LabelFor(m => m.__N, "Auctions per page: ", new { @class = "col-md-2 control-label" })
+                                            <div class="col-md-8">
+                                                @Html.TextBoxFor(m => m.__N, new { @class = "form-control" })
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            @Html.LabelFor(m => m.__D, "Default duration of auction: ", new { @class = "col-md-2 control-label" })
+                                            <div class="col-md-8">
+                                                @Html.TextBoxFor(m => m.__D, new { @class = "form-control" })
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            @Html.LabelFor(m => m.__S, "Number of tokens-SILVER package: ", new { @class = "col-md-2 control-label" })
+                                            <div class="col-md-8">
+                                                @Html.TextBoxFor(m => m.__S, new { @class = "form-control" })
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            @Html.LabelFor(m => m.__G, "Number of tokens-GOLD package: ", new { @class = "col-md-2 control-label" })
+                                            <div class="col-md-8">
+                                                @Html.TextBoxFor(m => m.__G, new { @class = "form-control" })
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            @Html.LabelFor(m => m.__P, "Number of tokens-PLATINUM package: ", new { @class = "col-md-2 control-label" })
+                                            <div class="col-md-8">
+                                                @Html.TextBoxFor(m => m.__P, new { @class = "form-control" })
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            @Html.LabelFor(m => m.__C, "Currency: ", new { @class = "col-md-2 control-label" })
+                                            <div class="col-md-8">
+                                                @Html.TextBoxFor(m => m.__C, new { @class = "form-control" })
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            @Html.LabelFor(m => m.__T, "Value of one token: ", new { @class = "col-md-2 control-label" })
+                                            <div class="col-md-8">
+                                                @Html.TextBoxFor(m => m.__T, new { @class = "form-control" })
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <div class="col-md-offset-2 col-md-10">
+                                                <input type="submit" class="btn btn-success" value="Save changes" />
+                                            </div>
+                                        </div>
+                                    }
+
+                                </div>
+                                <!-- / all products -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+
