@@ -94,12 +94,36 @@ namespace E_Commerce.Controllers
             }
             return RedirectToAction("Home", new { Message = MessageInfo.ChangeSuccess });
         }
-       
+       public void CheckFinish()
+        {
+            var myHub = GlobalHost.ConnectionManager.GetHubContext<AuctionsHub>();
+            //provera da li su zatvorene neke od otvorenih aukcija
+            using (var context=new AuctionsDB())
+            {
+                IEnumerable<auction> auctions= (from a in context.auction
+                                                where a.status == "OPENED"
+                                                select a).ToList();
+                foreach (var auction in auctions)
+                {
+                    DateTime now = DateTime.Now;
+                    DateTime closing = (DateTime)auction.closedAt;
+                    if (now > closing)
+                    {
+                        auction.status = "COMPLETED";
+                        context.Entry(auction).State = System.Data.Entity.EntityState.Modified;
+                        context.SaveChanges();                       
+                        myHub.Clients.All.closeAuction(auction.id);
+                    }
+                }
+            }
+            
+        }
         //TODO
         [System.Web.Mvc.Authorize]
         [HttpPost]
         public ActionResult Bid(Guid idAukcije)
         {
+            CheckFinish();
             log.Info("Auction/Bid has been fired.");
             int result=auctionsHub.SendBid(idAukcije,User.Identity.GetUserId());
             if (result==1)
@@ -209,7 +233,7 @@ namespace E_Commerce.Controllers
             using (var cont=new AuctionsDB())
             {
                 //??????
-                return View("Index",cont.auction.OrderByDescending(a=>a.closedAt).ToPagedList(pageNum,pageSize));
+                return View("Index",cont.auction.OrderByDescending(a=>a.title).ToPagedList(pageNum,pageSize));
             }
            
         }
@@ -217,6 +241,7 @@ namespace E_Commerce.Controllers
         public ActionResult Index(string title, string priceLow, string priceHigh, string status, int? page)
         {
             log.Info("Auction/Index has been fired.");
+            CheckFinish();
             //list all opened auctions
             //param search
             bool titleE = false;
@@ -300,7 +325,7 @@ namespace E_Commerce.Controllers
                     pageNum = (int)page;
                 }
 
-                auctions = auctions.OrderBy(s => s.closedAt);
+                auctions = auctions.OrderByDescending(s => s.title);
                 return View(auctions.ToPagedList(pageNum, pageSize));
             }
 

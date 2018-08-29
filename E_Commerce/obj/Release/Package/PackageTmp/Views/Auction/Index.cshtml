@@ -210,8 +210,10 @@
         myHub.client.closeAuction = function (auctionID) {
             var statusField = "#" + auctionID + "_status";
             var btn = "#" + auctionID + "_btn";
+            var timerField = "#" + auctionID + "_time";
             $(statusField).text("COMPLETED");
             $(btn).addClass("disabled");
+            $(timerField).text("0:0");
         }
 
         $.connection.hub.start();

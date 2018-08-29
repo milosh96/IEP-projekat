@@ -128,3 +128,11 @@ c:\users\milos\source\repos\IEP\E_Commerce\bin\Microsoft.AspNet.SignalR.Core.xml
 c:\users\milos\source\repos\IEP\E_Commerce\bin\Microsoft.AspNet.SignalR.SystemWeb.xml
 c:\users\milos\source\repos\IEP\E_Commerce\bin\PagedList.xml
 c:\users\milos\source\repos\IEP\E_Commerce\bin\PagedList.Mvc.xml
+C:\Users\MIlos\source\repos\IEP\E_Commerce\bin\log4net.dll
+C:\Users\MIlos\source\repos\IEP\E_Commerce\bin\System.Net.Http.Formatting.dll
+C:\Users\MIlos\source\repos\IEP\E_Commerce\bin\System.Web.Http.dll
+C:\Users\MIlos\source\repos\IEP\E_Commerce\bin\System.Web.Http.WebHost.dll
+C:\Users\MIlos\source\repos\IEP\E_Commerce\bin\log4net.xml
+C:\Users\MIlos\source\repos\IEP\E_Commerce\bin\System.Net.Http.Formatting.xml
+C:\Users\MIlos\source\repos\IEP\E_Commerce\bin\System.Web.Http.xml
+C:\Users\MIlos\source\repos\IEP\E_Commerce\bin\System.Web.Http.WebHost.xml

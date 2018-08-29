@@ -242,8 +242,10 @@
         myHub.client.closeAuction = function (auctionID) {
             var statusField = "#" + auctionID + "_status";
             var btn = "#" + auctionID + "_btn";
-            $(statusField).text("COMPLETED");
+            var timerField = "#" + auctionID + "_time";
+            $(statusField).text("COMPLETED ");
             $(btn).addClass("disabled");
+            $(timerField).text("0:0");
         }
         $.connection.hub.start();
     });
@@ -276,8 +278,8 @@
                             // buttons[i].innerHTML = '@Html.ActionLink("BID NOW", "BidNow", "Auctions", null, htmlAttributes: new { @class = "btn btn-secondary", @onclick = "javascript:return false;" })';
                             var btn = "#" + auctionId + "_btn";
                             $(btn).prop('disabled', true);
-                            timer.innerHTML = "0:0";
-
+                        timer.innerHTML = "0:0";
+                        statusi.innerHTML = "COMPLETED";
                         } else {
                             var time = minutes * 60 + seconds - 1;
                             minutes = parseInt(time / 60);

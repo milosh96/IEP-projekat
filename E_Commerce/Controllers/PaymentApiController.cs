@@ -11,7 +11,6 @@ namespace E_Commerce.Controllers
     public class PaymentApiController : ApiController
     {
         private static readonly log4net.ILog log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-
         // GET: api/PaymentApi
         public IEnumerable<string> Get()
         {
