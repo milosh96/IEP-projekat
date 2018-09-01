@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Net.Mail;
 using System.Web;
@@ -35,32 +36,46 @@ namespace E_Commerce.Controllers
             Guid id = clientid;
             using (var context=new AuctionsDB())
             {
-                tokenOrder to = context.tokenOrder.Find(id);
-                if (to != null)
+                using(var trans = context.Database.BeginTransaction(IsolationLevel.Serializable))
                 {
-                    //menjamo status u ono sto je prosledjeno
-                    User user = context.User.Find(to.idUser);
-                    if (user != null)
+                    try
                     {
-                        if (to.status!= "SUBMITTED           ")
+                        tokenOrder to = context.tokenOrder.Find(id);
+                        if (to != null)
                         {
-                            return RedirectToAction("ListOrders", "Token");
+                            //menjamo status u ono sto je prosledjeno
+                            User user = context.User.Find(to.idUser);
+                            if (user != null)
+                            {
+                                if (to.status != "SUBMITTED           ")
+                                {
+                                    return RedirectToAction("ListOrders", "Token");
+                                }
+                                if (status.Equals("success"))
+                                {
+                                    user.NumberOfTokens += (int)to.numTokens;
+                                    to.status = "COMPLETED";
+                                }
+                                else
+                                {
+                                    to.status = "CANCELED";
+                                }
+                                context.Entry(user).State = System.Data.Entity.EntityState.Modified;
+                                context.Entry(to).State = System.Data.Entity.EntityState.Modified;
+                                sendMail(user.Email, "Centili payment", "Your payment was successful.");
+                                context.SaveChanges();
+                                trans.Commit();
+                            }
                         }
-                        if (status.Equals("success"))
-                        {
-                            user.NumberOfTokens +=(int) to.numTokens;
-                            to.status = "COMPLETED";
-                        }
-                        else
-                        {
-                            to.status = "CANCELED";
-                        }
-                        context.Entry(user).State = System.Data.Entity.EntityState.Modified;
-                        context.Entry(to).State = System.Data.Entity.EntityState.Modified;
-                        context.SaveChanges();
-                        sendMail(user.Email, "Centili payment", "Your payment was successful.");
+                    }
+                    catch(Exception ex)
+                    {
+                        trans.Rollback();
+                        log.Error("Centili payment exception caught");
                     }
                 }
+                
+                
 
             }
             return RedirectToAction("ListOrders", "Token");
