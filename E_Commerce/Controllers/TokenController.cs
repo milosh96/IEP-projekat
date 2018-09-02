@@ -66,6 +66,14 @@ namespace E_Commerce.Controllers
                                 context.SaveChanges();
                                 trans.Commit();
                             }
+                            else
+                            {
+                                throw new Exception();
+                            }
+                        }
+                        else
+                        {
+                            throw new Exception();
                         }
                     }
                     catch(Exception ex)
@@ -128,30 +136,43 @@ namespace E_Commerce.Controllers
             E_Commerce.Models.User user = null;
             using(var con = new E_Commerce.Models.AuctionsDB())
             {
-                user = con.User.Find(User.Identity.GetUserId());
-                if (user != null)
+                using(var trans = con.Database.BeginTransaction(IsolationLevel.Serializable))
                 {
-                    //make token order
-                    var to=new tokenOrder()
+                    try
                     {
-                        id=Guid.NewGuid(),
-                        numTokens=numT,
-                        idUser= User.Identity.GetUserId(),
-                        status="SUBMITTED",
-                        price=AdminParams.T*numT
+                        user = con.User.Find(User.Identity.GetUserId());
+                        if (user != null)
+                        {
+                            //make token order
+                            var to = new tokenOrder()
+                            {
+                                id = Guid.NewGuid(),
+                                numTokens = numT,
+                                idUser = User.Identity.GetUserId(),
+                                status = "SUBMITTED",
+                                price = AdminParams.T * numT
 
-                    };
-                    con.tokenOrder.Add(to);
-                    con.SaveChanges();
-                    return View(to);
+                            };
+                            con.tokenOrder.Add(to);
+                            con.SaveChanges();
+                            trans.Commit();
+                            return View(to);
+                        }
+                        else
+                        {
+                            throw new Exception();
+                        }
+                    }
+                    catch(Exception ex)
+                    {
+                        log.Error("Error with submitting token order");
+                        trans.Rollback();
+                    }
                 }
-                else
-                {
-                    return RedirectToAction("ListOrders", "Token");
-                }
+                
             }
-            
-            
+
+            return RedirectToAction("ListOrders", "Token");
         }
         public ActionResult ListOrders(int? page)
         {

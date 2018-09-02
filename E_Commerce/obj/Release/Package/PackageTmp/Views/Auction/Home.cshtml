@@ -15,19 +15,25 @@
                     <h2>Search auctions</h2>
                     <div class="col-md-12">
                         <div class="aa-myaccount-register">
-                            @using (Html.BeginForm("Index", "Auction", FormMethod.Post, new { enctype = "multipart/form-data", @class = "form-horizontal aa-login-form" }))
+                            @using (Html.BeginForm("Index", "Auction", FormMethod.Get, new { enctype = "multipart/form-data", @class = "form-horizontal aa-login-form" }))
                             {
-                                <p>
-                                    Title of the auctions: <br />
-                                    <input type="text" name="title" />
-                                    <br />Lowest price: <br />
-                                    <input type="text" name="priceLow" />
-                                    <br />Highest price: <br />
-                                    <input type="text" name="priceHigh" />
-                                    <br />Status of the auctions: <br />
-                                    <input type="text" name="status" />
+                            <p>
+                                Title of the auctions: <br />
+                                <input type="text" name="title" />
+                                <br />Lowest price: <br />
+                                <input type="text" name="priceLow" />
+                                <br />Highest price: <br />
+                                <input type="text" name="priceHigh" />
+                                <br />Status of the auctions: <br />
+                                <!--<input type="text" name="status" />-->
+                                <select class="form-control" id="status" name="status">
+                                    <option value="N">Select status</option>
+                                    <option value="R">READY</option>
+                                    <option value="O">OPENED</option>
+                                    <option value="C">COMPLETED</option>
+                                </select>
 
-                                </p>
+                            </p>
 
                                 <div class="form-group">
                                     <div class="col-md-offset-2 col-md-10">

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Web;
 using E_Commerce.Models;
@@ -17,86 +18,101 @@ namespace E_Commerce.Helper
                 User user = null;
                 using (var context = new AuctionsDB())
                 {
-                    auction = context.auction.Find(auctionID);
-                    user = context.User.Find(userID);
-
-
-                    if ((auction != null) && (user != null))
+                    using(var trans = context.Database.BeginTransaction(IsolationLevel.Serializable))
                     {
-                        //cena da ulozimo jos jedan token
-                        int minNext = (int)(auction.currentPrice+AdminParams.T);
-                        int userMoney = (int)(user.NumberOfTokens * AdminParams.T);
-                        if ((userMoney >= minNext) && (auction.status.Contains("OPENED")))
+                        try
                         {
-                            tokens = false;
-                            //kako korisnik da bira koliko?
-                            int price = minNext;
-                            int tokensNeeded = (int)Math.Ceiling(minNext/AdminParams.T);
-                            /*
-                            double remaining = ((DateTime)auction.closedAt - DateTime.Now).TotalSeconds;
+                            auction = context.auction.Find(auctionID);
+                            user = context.User.Find(userID);
 
-                            DateTime newClosed = (DateTime)auction.closedAt;
-                            if (remaining <= 10)
+
+                            if ((auction != null) && (user != null))
                             {
-                                double increment = remaining * (-1);
-                                increment += 10;
+                                //cena da ulozimo jos jedan token
+                                int minNext = (int)(auction.currentPrice + AdminParams.T);
+                                int userMoney = (int)(user.NumberOfTokens * AdminParams.T);
+                                if ((userMoney >= minNext) && (auction.status.Contains("OPENED")))
+                                {
+                                    tokens = false;
+                                    //kako korisnik da bira koliko?
+                                    int price = minNext;
+                                    int tokensNeeded = (int)Math.Ceiling(minNext / AdminParams.T);
+                                    /*
+                                    double remaining = ((DateTime)auction.closedAt - DateTime.Now).TotalSeconds;
 
-                                newClosed = newClosed.AddSeconds(increment);
-                            }
+                                    DateTime newClosed = (DateTime)auction.closedAt;
+                                    if (remaining <= 10)
+                                    {
+                                        double increment = remaining * (-1);
+                                        increment += 10;
 
-                            auction.closedAt = newClosed;
-                            timeRemaining =  ((DateTime)auction.closedAt - DateTime.Now).TotalSeconds;
-                            */
-                            timeRemaining = 1;
-                            //umanjujemo za onoliko koliko potrebno tokena
-                            user.NumberOfTokens=user.NumberOfTokens-tokensNeeded;
-                            context.Entry(user).State= System.Data.Entity.EntityState.Modified;
-                            context.SaveChanges();
-                            bid latestBid = new bid()
-                            {
-                                id = Guid.NewGuid(),
-                                numTokens = tokensNeeded,
-                                placedAt = DateTime.Now,
-                                idUser = userID,
-                                idAuction = auctionID
-                            };
-                            auction.bidId = latestBid.id;
-                            //mozda povecamo za 10 posto?
-                            auction.currentPrice=price;
-                            //? sta je ovo auction.bid.Add(latestBid);
-                           
-                                context.Entry(auction).State = System.Data.Entity.EntityState.Modified;
-                                context.SaveChanges();
+                                        newClosed = newClosed.AddSeconds(increment);
+                                    }
 
-                                context.bid.Add(latestBid);
-                                context.SaveChanges();
+                                    auction.closedAt = newClosed;
+                                    timeRemaining =  ((DateTime)auction.closedAt - DateTime.Now).TotalSeconds;
+                                    */
+                                    timeRemaining = 1;
+                                    //umanjujemo za onoliko koliko potrebno tokena
+                                    user.NumberOfTokens = user.NumberOfTokens - tokensNeeded;
+                                    context.Entry(user).State = System.Data.Entity.EntityState.Modified;
+                                    context.SaveChanges();
+                                    bid latestBid = new bid()
+                                    {
+                                        id = Guid.NewGuid(),
+                                        numTokens = tokensNeeded,
+                                        placedAt = DateTime.Now,
+                                        idUser = userID,
+                                        idAuction = auctionID
+                                    };
+                                    auction.bidId = latestBid.id;
+                                    //mozda povecamo za 10 posto?
+                                    auction.currentPrice = price;
+                                    //? sta je ovo auction.bid.Add(latestBid);
 
-                                fullName = user.FirstName + " " + user.LastName;
-                                newPrice = "" + price;
-                        }
-                        else
-                        {
-                            fullName = newPrice = null;
+                                    context.Entry(auction).State = System.Data.Entity.EntityState.Modified;
+                                    context.SaveChanges();
 
-                            if (!auction.status.Contains("OPENED"))
-                            {
-                                tokens = false;
-                                timeRemaining = -1;
+                                    context.bid.Add(latestBid);
+                                    context.SaveChanges();
+                                    trans.Commit();
+                                    fullName = user.FirstName + " " + user.LastName;
+                                    newPrice = "" + price;
+                                }
+                                else
+                                {
+                                    fullName = newPrice = null;
+
+                                    if (!auction.status.Contains("OPENED"))
+                                    {
+                                        tokens = false;
+                                        timeRemaining = -1;
+                                    }
+                                    else
+                                    {
+                                        tokens = true;
+                                        timeRemaining = 1;
+                                    }
+                                }
+
                             }
                             else
                             {
+                                fullName = newPrice = null;
                                 tokens = true;
-                                timeRemaining = 1;
+                                timeRemaining = -1;
+                                throw new Exception();
                             }
                         }
-
+                        catch(Exception ex)
+                        {
+                            trans.Rollback();
+                            fullName = newPrice = null;
+                            tokens = true;
+                            timeRemaining = -1;
+                        }
                     }
-                    else
-                    {
-                        fullName = newPrice = null;
-                        tokens = true;
-                        timeRemaining = -1;
-                    }
+                    
                 }
             }
             catch (FormatException)

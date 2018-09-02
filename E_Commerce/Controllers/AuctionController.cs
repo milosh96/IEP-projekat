@@ -9,6 +9,7 @@ using System.IO;
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.SignalR;
 using E_Commerce.Hubs;
+using System.Data;
 
 namespace E_Commerce.Controllers
 {
@@ -72,27 +73,43 @@ namespace E_Commerce.Controllers
             }
             using(var context=new AuctionsDB())
             {
-                auction auction = context.auction.Find(idAukcije);
-                if (auction == null)
+                using(var trans = context.Database.BeginTransaction(IsolationLevel.Serializable))
                 {
-                    return RedirectToAction("Home", new { Message = MessageInfo.ChangeUnsuccess });
-                }
-                if (!auction.status.Contains("READY"))
-                {
-                    log.Error("Auction/Home auction is not ready.");
-                    return RedirectToAction("Home", new { Message = MessageInfo.AuctionFinished });
-                }
+                    try
+                    {
 
-                //otvaranje
-                auction.status = "OPENED";
-                auction.openedAt = DateTime.Now;
-                auction.closedAt = DateTime.Now.AddSeconds((double)auction.duration);
-                context.Entry(auction).State = System.Data.Entity.EntityState.Modified;
-                context.SaveChanges();
-                var myHub = GlobalHost.ConnectionManager.GetHubContext<AuctionsHub>();
-                myHub.Clients.All.updateStatus(idAukcije);
+                        auction auction = context.auction.Find(idAukcije);
+                        if (auction == null)
+                        {
+                            throw new Exception();
+                        }
+                        if (!auction.status.Contains("READY"))
+                        {
+                            log.Error("Auction/Home auction is not ready.");
+                            throw new Exception();
+                        }
+
+                        //otvaranje
+                        auction.status = "OPENED";
+                        auction.openedAt = DateTime.Now;
+                        auction.closedAt = DateTime.Now.AddSeconds((double)auction.duration);
+                        context.Entry(auction).State = System.Data.Entity.EntityState.Modified;
+                        context.SaveChanges();
+                        trans.Commit();
+                        var myHub = GlobalHost.ConnectionManager.GetHubContext<AuctionsHub>();
+                        myHub.Clients.All.updateStatus(idAukcije);
+                        return RedirectToAction("Home", new { Message = MessageInfo.ChangeSuccess });
+                    }
+                    catch(Exception ex)
+                    {
+                        log.Error("Error with opening auction");
+                        trans.Rollback();
+                    }
+                }
+                
             }
-            return RedirectToAction("Home", new { Message = MessageInfo.ChangeSuccess });
+            return RedirectToAction("Home", new { Message = MessageInfo.ChangeUnsuccess });
+            
         }
        public void CheckFinish()
         {
@@ -100,47 +117,93 @@ namespace E_Commerce.Controllers
             //provera da li su zatvorene neke od otvorenih aukcija
             using (var context=new AuctionsDB())
             {
-                IEnumerable<auction> auctions= (from a in context.auction
-                                                where a.status == "OPENED"
-                                                select a).ToList();
-                foreach (var auction in auctions)
+                using(var trans = context.Database.BeginTransaction(IsolationLevel.Serializable))
                 {
-                    DateTime now = DateTime.Now;
-                    DateTime closing = (DateTime)auction.closedAt;
-                    if (now > closing)
+                    try
                     {
-                        auction.status = "COMPLETED";
-                        context.Entry(auction).State = System.Data.Entity.EntityState.Modified;
-                        context.SaveChanges();                       
-                        myHub.Clients.All.closeAuction(auction.id);
+                        IEnumerable<auction> auctions = (from a in context.auction
+                                                         where a.status == "OPENED"
+                                                         select a).ToList();
+                        foreach (var auction in auctions)
+                        {
+                            DateTime now = DateTime.Now;
+                            DateTime closing = (DateTime)auction.closedAt;
+                            if (now > closing)
+                            {
+                                auction.status = "COMPLETED";
+                                context.Entry(auction).State = System.Data.Entity.EntityState.Modified;
+                                context.SaveChanges();
+                                myHub.Clients.All.closeAuction(auction.id);
+                            }
+                        }
+                        trans.Commit();
+                    }
+                    catch(Exception e)
+                    {
+                        log.Error("Error with finnishing auction.");
+                        trans.Rollback();
                     }
                 }
+                
             }
             
         }
         //TODO
         [System.Web.Mvc.Authorize]
         [HttpPost]
-        public ActionResult Bid(Guid idAukcije)
+        public ActionResult Bid(Guid idAukcije, string sTitle, string sPriceLow, string sPriceHigh, string sStatus, int sPage)
         {
             CheckFinish();
             log.Info("Auction/Bid has been fired.");
+            
             int result=auctionsHub.SendBid(idAukcije,User.Identity.GetUserId());
+
             if (result==1)
             {
-                return RedirectToAction("Home", new { Message = MessageInfo.AuctionOver });
+                return RedirectToAction("Index", new {
+                    title = sTitle,
+                    priceLow = sPriceLow,
+                    priceHigh = sPriceHigh,
+                    status = sStatus,
+                    page=sPage,
+                    Message = MessageInfo.AuctionOver
+                });
             }
             else if (result == 2)
             {
-                return RedirectToAction("Home", new { Message = MessageInfo.NoTokens });
+                return RedirectToAction("Index", new
+                {
+                    title = sTitle,
+                    priceLow = sPriceLow,
+                    priceHigh = sPriceHigh,
+                    status = sStatus,
+                    page = sPage,
+                    Message = MessageInfo.NoTokens
+                });
             }
             else if (result == 3)
             {
-                return RedirectToAction("Home", new { Message = MessageInfo.ChangeUnsuccess });
+                return RedirectToAction("Index", new
+                {
+                    title = sTitle,
+                    priceLow = sPriceLow,
+                    priceHigh = sPriceHigh,
+                    status = sStatus,
+                    page = sPage,
+                    Message = MessageInfo.ChangeUnsuccess
+                });
             }
             else
             {
-                return RedirectToAction("Home", new { Message = MessageInfo.BidSuccess });
+                return RedirectToAction("Index", new
+                {
+                    title = sTitle,
+                    priceLow = sPriceLow,
+                    priceHigh = sPriceHigh,
+                    status = sStatus,
+                    page = sPage,
+                    Message = MessageInfo.BidSuccess
+                });
             }
 
         }
@@ -157,22 +220,35 @@ namespace E_Commerce.Controllers
             }
             using (var context = new AuctionsDB())
             {
-                auction auction = context.auction.Find(id);
-                if (auction == null)
+                using(var trans = context.Database.BeginTransaction(IsolationLevel.Serializable))
                 {
-                    return ;
-                }
-                if (!auction.status.Contains("OPENED"))
-                {
-                    return;
-                }
+                    try
+                    {
+                        auction auction = context.auction.Find(id);
+                        if (auction == null)
+                        {
+                            return;
+                        }
+                        if (!auction.status.Contains("OPENED"))
+                        {
+                            return;
+                        }
 
-                //otvaranje
-                auction.status = "COMPLETED";
-                context.Entry(auction).State = System.Data.Entity.EntityState.Modified;
-                context.SaveChanges();
-                var myHub = GlobalHost.ConnectionManager.GetHubContext<AuctionsHub>();
-                myHub.Clients.All.closeAuction(id);
+                        //otvaranje
+                        auction.status = "COMPLETED";
+                        context.Entry(auction).State = System.Data.Entity.EntityState.Modified;
+                        context.SaveChanges();
+                        trans.Commit();
+                        var myHub = GlobalHost.ConnectionManager.GetHubContext<AuctionsHub>();
+                        myHub.Clients.All.closeAuction(id);
+                    }
+                    catch(Exception e)
+                    {
+                        log.Error("Error with finnishing auction(called)");
+                        trans.Rollback();
+                    }
+                }
+                
             }
         }
         public ActionResult Create()
@@ -199,20 +275,33 @@ namespace E_Commerce.Controllers
 
                 using (var context = new AuctionsDB())
                 {
-                    var newAuction = new auction()
+                    using(var trans = context.Database.BeginTransaction(IsolationLevel.Serializable))
                     {
-                        id = Guid.NewGuid(),
-                        title = model.title,
-                        duration = model.duration,
-                        startPrice = model.startPrice,
-                        currentPrice = model.startPrice,
-                        createdAt = curr,
-                        status = "READY",
-                        picture = image
-                    };
+                        try
+                        {
+                            var newAuction = new auction()
+                            {
+                                id = Guid.NewGuid(),
+                                title = model.title,
+                                duration = model.duration,
+                                startPrice = model.startPrice,
+                                currentPrice = model.startPrice,
+                                createdAt = curr,
+                                status = "READY",
+                                picture = image
+                            };
 
-                    context.auction.Add(newAuction);
-                    context.SaveChanges();
+                            context.auction.Add(newAuction);
+                            context.SaveChanges();
+                            trans.Commit();
+                        }
+                        catch(Exception e)
+                        {
+                            log.Error("Error with creating auction.");
+                            trans.Rollback();
+                        }
+                    }
+                    
 
                 }
                 return RedirectToAction("Home", new { Message = MessageInfo.SuccessCreation });
@@ -221,9 +310,20 @@ namespace E_Commerce.Controllers
         }
 
         [AllowAnonymous]
-        public ActionResult IndexGet(int? page)
+        public ActionResult IndexGet(int? page, MessageInfo? message)
         {
             log.Info("Auction/IndexGet has been fired.");
+            ViewBag.StatusMessage =
+               message == MessageInfo.ChangeSuccess ? "Successfully opened a auction."
+               : message == MessageInfo.ChangeUnsuccess ? "Error, something went wrong."
+               : message == MessageInfo.AuctionFinished ? "Error, the auction is not in the READY state."
+               : message == MessageInfo.AuctionClosed ? "Auction has been successfully closed."
+                : message == MessageInfo.AuctionOver ? "The auction has finished."
+                 : message == MessageInfo.BidSuccess ? "Your bid has been successfully placed."
+                 : message == MessageInfo.NoTokens ? "Not enough tokens."
+                 : message == MessageInfo.RequiredFields ? "All fields are required."
+                 : message == MessageInfo.SuccessCreation ? "Auction successfully created."
+               : "";
             int pageSize = AdminParams.N;
             int pageNum = 1;
             if (page != null)
@@ -237,11 +337,23 @@ namespace E_Commerce.Controllers
             }
            
         }
-        [HttpPost]
-        public ActionResult Index(string title, string priceLow, string priceHigh, string status, int? page)
+        
+        [AllowAnonymous]
+        public ActionResult Index(string title="", string priceLow="", string priceHigh="", string status="", int page=1, MessageInfo message=MessageInfo.NoMesage)
         {
             log.Info("Auction/Index has been fired.");
             CheckFinish();
+            ViewBag.StatusMessage =
+               message == MessageInfo.ChangeSuccess ? "Successfully opened a auction."
+               : message == MessageInfo.ChangeUnsuccess ? "Error, something went wrong."
+               : message == MessageInfo.AuctionFinished ? "Error, the auction is not in the READY state."
+               : message == MessageInfo.AuctionClosed ? "Auction has been successfully closed."
+                : message == MessageInfo.AuctionOver ? "The auction has finished."
+                 : message == MessageInfo.BidSuccess ? "Your bid has been successfully placed."
+                 : message == MessageInfo.NoTokens ? "Not enough tokens."
+                 : message == MessageInfo.RequiredFields ? "All fields are required."
+                 : message == MessageInfo.SuccessCreation ? "Auction successfully created."
+               : "";
             //list all opened auctions
             //param search
             bool titleE = false;
@@ -250,10 +362,10 @@ namespace E_Commerce.Controllers
             bool statusE = false;
             bool minmax = false;
 
-            if (!String.IsNullOrEmpty(title)) titleE = true;
-            if (!String.IsNullOrEmpty(priceLow)) priceLowE = true;
-            if (!String.IsNullOrEmpty(priceHigh)) priceHIghE = true;
-            if (!String.IsNullOrEmpty(status)) statusE = true;
+            if (title!="") titleE = true;
+            if (priceLow!="") priceLowE = true;
+            if (priceHigh!="") priceHIghE = true;
+            if (status!="") statusE = true;
             if (priceLowE && priceHIghE) minmax = true;
 
             using (var context = new E_Commerce.Models.AuctionsDB())
@@ -289,7 +401,7 @@ namespace E_Commerce.Controllers
                     string[] titles = title.Split(' ');
                     foreach (var word in titles)
                     {
-                        auctions = auctions.Where(a => a.title.Contains(word));
+                        auctions = auctions.Where(a => a.title.ToLower().Contains(word.ToLower()));
                     }
 
                 }
@@ -298,7 +410,7 @@ namespace E_Commerce.Controllers
                 
                 if (statusE)
                 {
-                    
+                    /*
                     switch (status) {
                         case "READY":
                             auctions = auctions.Where(a => a.status=="READY     ");
@@ -309,6 +421,22 @@ namespace E_Commerce.Controllers
                         case "OPENED":
                             auctions = auctions.Where(a => a.status=="OPENED    ");
                             break;
+                    }*/
+                    if (status == "N")
+                    {
+                        Console.WriteLine("Nothing");
+                    }
+                    else if (status == "R")
+                    {
+                        auctions = auctions.Where(a => a.status == "READY     ");
+                    }
+                    else if (status == "C")
+                    {
+                        auctions = auctions.Where(a => a.status == "COMPLETED ");
+                    }
+                    else if (status == "O")
+                    {
+                        auctions = auctions.Where(a => a.status == "OPENED    ");
                     }
                 }
                 
@@ -320,22 +448,39 @@ namespace E_Commerce.Controllers
                 }*/
                 int pageSize = AdminParams.N;
                 int pageNum = 1;
-                if (page != null)
+                if (page != 1)
                 {
-                    pageNum = (int)page;
+                    pageNum = (int)page;            
                 }
-
                 auctions = auctions.OrderByDescending(s => s.title);
+
+                ViewBag.sTitle = title;
+                ViewBag.sStatus = status;
+                ViewBag.sPriceLow = priceLow;
+                ViewBag.sPriceHigh = priceHigh;
+                ViewBag.sPage = pageNum;
                 return View(auctions.ToPagedList(pageNum, pageSize));
             }
 
         }
 
        
-        [HttpPost]
-        public ActionResult Show(Guid idAukcije)
+        [AllowAnonymous]
+        public ActionResult Show(Guid idAukcije,MessageInfo? message)
         {
             log.Info("Auction/Show has been fired.");
+
+            ViewBag.StatusMessage =
+               message == MessageInfo.ChangeSuccess ? "Successfully opened an auction."
+               : message == MessageInfo.ChangeUnsuccess ? "Error, something went wrong."
+               : message == MessageInfo.AuctionFinished ? "Error, the auction is not in the READY state."
+               : message == MessageInfo.AuctionClosed ? "Auction has been successfully closed."
+                : message == MessageInfo.AuctionOver ? "The auction has finished."
+                 : message == MessageInfo.BidSuccess ? "Your bid has been successfully placed."
+                 : message == MessageInfo.NoTokens ? "Not enough tokens."
+                 : message == MessageInfo.RequiredFields ? "All fields are required."
+                 : message == MessageInfo.SuccessCreation ? "Auction successfully created."
+               : "";
             auction auction = null;
             using(var context= new AuctionsDB())
             {
@@ -359,6 +504,32 @@ namespace E_Commerce.Controllers
             }
         }
 
+        [System.Web.Mvc.Authorize]
+        public ActionResult BidShow(Guid idAukcije)
+        {
+            CheckFinish();
+            log.Info("Auction/BidShow has been fired.");
+
+            int result = auctionsHub.SendBid(idAukcije, User.Identity.GetUserId());
+
+            if (result == 1)
+            {
+                return RedirectToAction("Show", new { idAukcije=idAukcije,Message = MessageInfo.AuctionOver });
+            }
+            else if (result == 2)
+            {
+                return RedirectToAction("Show", new { idAukcije = idAukcije, Message = MessageInfo.NoTokens });
+            }
+            else if (result == 3)
+            {
+                return RedirectToAction("Show", new { idAukcije = idAukcije, Message = MessageInfo.ChangeUnsuccess });
+            }
+            else
+            {
+                return RedirectToAction("Show", new { idAukcije = idAukcije, Message = MessageInfo.BidSuccess });
+            }
+
+        }
         [System.Web.Mvc.Authorize]
         public ActionResult Won(int? page)
         {
@@ -398,7 +569,8 @@ namespace E_Commerce.Controllers
             BidSuccess,
             NoTokens,
             RequiredFields,
-            SuccessCreation
+            SuccessCreation,
+            NoMesage
         }
     }
 }

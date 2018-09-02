@@ -1,0 +1,2 @@
+INFO 6 E_Commerce.Controllers.PaymentApiController - Api/Status has been fired
+ERROR 6 E_Commerce.Controllers.PaymentApiController - API with wrong token id called

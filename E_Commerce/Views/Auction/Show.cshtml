@@ -49,6 +49,8 @@
     preostaloVreme = minutes + ":" + seconds;
 }
 
+<h5 class="text-info">@ViewBag.StatusMessage</h5>
+
 <h2>Auction details</h2>
 <!-- product category -->
 <section id="aa-product-details">
@@ -116,7 +118,7 @@
                                     <div class="aa-prod-view-bottom">
                                         @if (Request.IsAuthenticated)
                                         {
-                                            using (Html.BeginForm("Bid", "Auction", FormMethod.Post, new { enctype = "multipart/form-data", @class = "form-horizontal aa-login-form" }))
+                                            using (Html.BeginForm("BidShow", "Auction", FormMethod.Get, new { enctype = "multipart/form-data", @class = "form-horizontal aa-login-form" }))
                                             {
 
                                                 <input type="hidden" name="idAukcije" value="@Model.auction.id" />

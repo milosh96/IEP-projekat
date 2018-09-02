@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Web.Http;
+using System.Data;
 
 namespace E_Commerce.Controllers
 {
@@ -45,40 +46,55 @@ namespace E_Commerce.Controllers
 
             using (var context = new AuctionsDB())
             {
-                tokenOrder to = context.tokenOrder.Find(Guid.Parse(clientid));
-                if (to == null)
+                using(var trans = context.Database.BeginTransaction(IsolationLevel.Serializable))
                 {
-                    log.Error("API with wrong token id called");
-                    return "failed!";
-                }
-
-                User user = context.User.Find(to.idUser);
-                if (user != null)
-                {
-                    if (to.status != "SUBMITTED           ")
+                    try
                     {
-                        log.Error("API already called");
+                        tokenOrder to = context.tokenOrder.Find(Guid.Parse(clientid));
+                        if (to == null)
+                        {
+                            log.Error("API with wrong token id called");
+                            throw new Exception();
+                            
+                        }
+
+                        User user = context.User.Find(to.idUser);
+                        if (user != null)
+                        {
+                            if (to.status != "SUBMITTED           ")
+                            {
+                                log.Error("API already called");
+                                throw new Exception();
+
+                            }
+                            if (status.Equals("success"))
+                            {
+                                user.NumberOfTokens += (int)to.numTokens;
+                                to.status = "COMPLETED";
+                            }
+                            else
+                            {
+                                to.status = "CANCELED";
+                            }
+                            TokenController.sendMail(user.Email, "Centili payment", "Your payment was successful.");
+                            context.Entry(user).State = System.Data.Entity.EntityState.Modified;
+                            context.Entry(to).State = System.Data.Entity.EntityState.Modified;
+                            context.SaveChanges();
+                            trans.Commit();                   
+                        }
+                        else
+                        {
+                            log.Error("API user not found.");
+                            throw new Exception();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        trans.Rollback();
                         return "failed!";
                     }
-                    if (status.Equals("success"))
-                    {
-                        user.NumberOfTokens += (int)to.numTokens;
-                        to.status = "COMPLETED";
-                    }
-                    else
-                    {
-                        to.status = "CANCELED";
-                    }
-                    context.Entry(user).State = System.Data.Entity.EntityState.Modified;
-                    context.Entry(to).State = System.Data.Entity.EntityState.Modified;
-                    context.SaveChanges();
-                    TokenController.sendMail(user.Email, "Centili payment", "Your payment was successful.");                    
                 }
-                else
-                {
-                    log.Error("API user not found.");
-                    return "failed!";
-                }
+ 
             }
             return "success!";
         }

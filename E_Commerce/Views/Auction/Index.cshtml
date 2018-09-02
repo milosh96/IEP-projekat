@@ -8,6 +8,8 @@
 
 <h2>@ViewBag.Title</h2>
 <!-- Products section -->
+
+<h5 class="text-info">@ViewBag.StatusMessage</h5>
 <section id="aa-product">
     <div class="container">
         <div class="row">
@@ -19,8 +21,12 @@
                             <div class="page-numbering">
                                 <!--@Html.PagedListPager(Model, page => Url.Action("Index", new { page, currentFilter = ViewBag.CurrentFilter }))
                             -->
-                                @Html.PagedListPager(Model, page => Url.Action("IndexGet",
-                                                new { page }))
+                                @Html.PagedListPager(Model, page => Url.Action("Index",
+                                                new { title=ViewBag.sTitle,
+                                                    priceLow=ViewBag.sPriceLow,
+                                                    priceHigh=ViewBag.sPriceHigh,
+                                                    status =ViewBag.sStatus,
+                                                page}))
                             </div>
                             <!-- Tab panes -->
                             <div class="tab-content">
@@ -99,14 +105,16 @@
                                                 </figure>
                                                 <figcaption>
                                                     <h4 class="aa-product-title">
-                                                        @using (Html.BeginForm("Show", "Auction", FormMethod.Post, new { enctype = "multipart/form-data", @class = "form-horizontal aa-login-form" }))
+                                                        <!--@using (Html.BeginForm("Show", "Auction", FormMethod.Post, new { enctype = "multipart/form-data", @class = "form-horizontal aa-login-form" }))
                                                         {
 
                                                             <input type="hidden" name="idAukcije" value="@item.id" />
 
                                                             <input type="submit"  class="btn-link" style="text-decoration : none" value="@Html.DisplayFor(modelItem => item.title)" />
 
-                                                        }
+                                                        }-->
+                                                     @Html.ActionLink(item.title, "Show", new {idAukcije=item.id})
+                                                   
                                                        
                                                     </h4>
                                                     <span class="aa-product-price" id="@currentPriceID">@Html.DisplayFor(modelItem => item.currentPrice)</span><br />
@@ -151,16 +159,34 @@
                                                     }
                                                     @if (!(Request.IsAuthenticated && item.status.Contains("OPENED")))
                                                     {
-                                                        btnType += " disabled";
+                                                      btnType += " disabled";
+                                                       
                                                     }
-                                                    @using (Html.BeginForm("Show", "Auction", FormMethod.Post, new { enctype = "multipart/form-data", @class = "form-horizontal aa-login-form" }))
+                                                     <!--
+                                                    <span id="@bidBtnID" class="@btnType bidBtn">
+                                                        @Html.ActionLink("Bid", "Bid", new { idAukcije=item.id,
+                                                              sTitle = ViewBag.sTitle,
+                                                              sPriceLow = ViewBag.sPriceLow,
+                                                              sPriceHigh = ViewBag.sPriceHigh,
+                                                              sStatus = ViewBag.sStatus,
+                                                              sPage=ViewBag.sPage
+                                                        })
+                                                    </span>-->
+
+                                                    @using (Html.BeginForm("Bid", "Auction", FormMethod.Post, new { enctype = "multipart/form-data", @class = "form-horizontal aa-login-form" }))
                                                     {
 
                                                         <input type="hidden" name="idAukcije" value="@item.id" />
-
+                                                        <input type="hidden" name="sTitle" value="@ViewBag.sTitle" />
+                                                        <input type="hidden" name="sPriceLow" value="@ViewBag.sPriceLow" />
+                                                        <input type="hidden" name="sPriceHigh" value="@ViewBag.sPriceHigh" />
+                                                        <input type="hidden" name="sStatus" value="@ViewBag.sStatus" />
+                                                        <input type="hidden" name="sPage" value="@ViewBag.sPage" />
                                                         <input type="submit" id="@bidBtnID" class="@btnType bidBtn" value="BID" />
 
                                                     }
+
+
                                                 </figcaption>
                                             </li>
                                         }
@@ -217,6 +243,20 @@
         }
 
         $.connection.hub.start();
+
+        $("#bidLink").click(function (e) {
+
+            e.preventDefault();
+            $.ajax({
+
+                url: $(this).attr("href"), // comma here instead of semicolon   
+                success: function () {
+                    //alert("Value Added");  // or any other indication if you want to show
+                }
+
+            });
+
+        });
     });
 
         window.onload = function () {
